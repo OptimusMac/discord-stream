@@ -1,0 +1,28 @@
+spring:
+  data:
+    cassandra:
+      contact-points:
+        - cassandra
+      keyspace-name: discord
+      local-datacenter: datacenter1
+      connection:
+        connect-timeout: 30s
+        init-query-timeout: 30s
+      request:
+        timeout: 20s
+        consistency: local_one
+      pool:
+        idle-timeout: 10s
+        heartbeat-interval: 30s
+  cassandra:
+    keyspace-name: discord
+    schema-action: CREATE_IF_NOT_EXISTS
+
+discord:
+  token: 'Your-client-token'
+  reply-for-me: true
+  token-username: optimusmac_
+  auto-runner: true
+  streams:
+    - guildId: "1326293330388324393"
+      channelId: "1329571999676371094"
