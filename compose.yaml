@@ -1,0 +1,45 @@
+services:
+
+  cassandra:
+    image: cassandra:4.1
+    container_name: cassandra
+    ports:
+      - "9042:9042"
+    volumes:
+      - cassandra-data:/var/lib/cassandra
+      - ./init-cassandra.cql:/docker-entrypoint-initdb.d/init-cassandra.cql
+    environment:
+      - CASSANDRA_CLUSTER_NAME=discord_cluster
+      - CASSANDRA_DC=datacenter1
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "cqlsh -u cassandra -p cassandra -f /docker-entrypoint-initdb.d/init-cassandra.cql && cqlsh -u cassandra -p cassandra -e 'describe keyspaces'" ]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+    restart: always
+  discord-stream:
+    build:
+      context: ./
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATA_CASSANDRA_CONTACT_POINTS=cassandra
+      - SPRING_DATA_CASSANDRA_KEYSPACE=discord
+    depends_on:
+      cassandra:
+        condition: service_healthy
+    networks:
+      - app-network
+
+
+networks:
+  app-network:
+    driver: bridge
+
+
+volumes:
+  cassandra-data:
+    driver: local
