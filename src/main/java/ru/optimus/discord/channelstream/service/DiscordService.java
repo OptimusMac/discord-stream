@@ -12,6 +12,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import ru.optimus.discord.channelstream.config.DiscordConfig;
 import ru.optimus.discord.channelstream.modules.CityProcess;
+import ru.optimus.discord.channelstream.utils.NumberExtractor;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -21,6 +22,8 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @Slf4j
@@ -86,8 +89,12 @@ public class DiscordService {
     private Mono<Void> checkAndReply(Message message, String channelId, String type) {
         String text = message.content;
 
-        if (isNumber(text) && type.equalsIgnoreCase("NUMERIC")) {
-            return sendMessageWithResponse(channelId, incrementString(text))
+        String extract = NumberExtractor.extractSingleNumber(text);
+        if (extract != null && type.equalsIgnoreCase("NUMERIC")) {
+            String numericText = incrementString(extract);
+            if(numericText == null)
+                return Mono.empty();
+            return sendMessageWithResponse(channelId, numericText)
                     .doOnSuccess(messageService::saveByDiscordMessageResponse)
                     .then()
                     .onErrorResume(e -> {
@@ -120,6 +127,8 @@ public class DiscordService {
 
         return Mono.empty();
     }
+
+
 
     public boolean isLastCharCyrillicOrLatin(String text) {
         if (text == null || text.isEmpty()) {
@@ -158,12 +167,10 @@ public class DiscordService {
                 .doOnError(e -> System.err.println("Ошибка отправки: " + e.getMessage()));
     }
 
-    private boolean isNumber(String text) {
-        return text.matches("-?\\d+(\\.\\d+)?");
-    }
-
     public String incrementString(String text) {
         try {
+
+
             String normalized = text.trim().replace(",", ".");
             BigDecimal number = new BigDecimal(normalized);
             BigDecimal incremented = number.add(BigDecimal.ONE);

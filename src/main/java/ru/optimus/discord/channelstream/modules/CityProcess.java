@@ -31,12 +31,11 @@ public class CityProcess {
     }
 
     public Mono<List<String>> searchCities(char letter) {
-        // Конвертируем букву в верхний регистр
         char upperLetter = Character.toUpperCase(letter);
         log.debug("Starting city search for letter: {}", upperLetter);
 
         return webClient.get()
-                .uri("/{letter}", upperLetter)  // Используем букву в верхнем регистре
+                .uri("/{letter}", upperLetter)
                 .exchangeToMono(response -> {
                     log.debug("Received response status: {}", response.statusCode());
                     if (!response.statusCode().is2xxSuccessful()) {
