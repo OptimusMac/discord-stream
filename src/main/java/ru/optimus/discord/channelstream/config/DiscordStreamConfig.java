@@ -16,6 +16,5 @@ public class DiscordStreamConfig {
     public static class StreamConfig {
         private String guildId;
         private String channelId;
-        private String type;
     }
 }

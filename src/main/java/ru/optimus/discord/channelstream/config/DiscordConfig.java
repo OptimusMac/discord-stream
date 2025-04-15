@@ -1,6 +1,7 @@
 package ru.optimus.discord.channelstream.config;
 
 
+import com.datastax.oss.driver.shaded.guava.common.collect.ImmutableList;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;

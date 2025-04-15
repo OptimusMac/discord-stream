@@ -19,14 +19,13 @@ spring:
     schema-action: CREATE_IF_NOT_EXISTS
 
 discord:
-  token: "Your-Token"
+  token: "Your-token"
   reply-for-me: false
   token-username: optimusmac_
   auto-runner: true
   streams:
-    - guildId: "411933527282810903"
-      channelId: "1361039180142084226"
-      type: word #word/numeric
-    - guildId: "411933527282810903"
-      channelId: "1361038778436681782"
-      type: numeric #word/numeric
+    - guildId: "1361659509218476222"
+      channelId: "1361659509218476225"
+    - guildId: "1361659509218476222"
+      channelId: "1361842943542951996"
+

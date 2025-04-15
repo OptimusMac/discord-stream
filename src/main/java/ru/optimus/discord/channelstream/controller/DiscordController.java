@@ -17,12 +17,11 @@ public class DiscordController {
     private final DiscordService discordService;
 
 
-    @GetMapping(value = "/{channelId}/messages/{type}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping(value = "/{channelId}/messages", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<DiscordService.Message> streamMessages(
             @PathVariable String guildId,
-            @PathVariable String channelId,
-            @PathVariable String type) {
-        return discordService.streamChannelMessages(guildId, channelId, type);
+            @PathVariable String channelId) {
+        return discordService.streamChannelMessages(guildId, channelId);
     }
 
 
@@ -35,7 +34,7 @@ public class DiscordController {
                         if (ids.length != 2) {
                             return Flux.error(new IllegalArgumentException("Invalid format. Send guildId/channelId"));
                         }
-                        return discordService.streamChannelMessages(ids[0], ids[1], ids[2])
+                        return discordService.streamChannelMessages(ids[0], ids[1])
                                 .map(msg -> session.textMessage(msg.toString()));
                     });
             return session.send(messages);

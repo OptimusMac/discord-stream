@@ -28,6 +28,7 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATA_CASSANDRA_CONTACT_POINTS=cassandra
       - SPRING_DATA_CASSANDRA_KEYSPACE=discord
+      - MODULES_DIR=/app/modules
     depends_on:
       cassandra:
         condition: service_healthy

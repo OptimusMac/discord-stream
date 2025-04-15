@@ -1,5 +1,6 @@
 package ru.optimus.discord.channelstream.utils;
 
+import java.util.StringTokenizer;
 import java.util.regex.*;
 
 public class NumberExtractor {
@@ -21,7 +22,7 @@ public class NumberExtractor {
         while (matcher.find()) {
             count++;
             if (count > 1) {
-                return null; // Найдено больше одного числа
+                return null;
             }
             foundNumber = matcher.group();
         }
@@ -29,12 +30,21 @@ public class NumberExtractor {
         return foundNumber;
     }
 
-    /**
-     * Улучшенная проверка, является ли строка числом
-     * с учетом чисел в середине текста (если число только одно)
-     */
-    public static boolean isNumeric(String text) {
-        String number = extractSingleNumber(text);
-        return number != null && number.equals(text);
+
+
+    public static String extractSplit(String text){
+        StringTokenizer stringTokenizer = new StringTokenizer(text, " ");
+
+        while (stringTokenizer.hasMoreTokens()){
+            String token = stringTokenizer.nextToken();
+            String extract = extractSingleNumber(token);
+
+            if(extract != null){
+                return extract;
+            }
+        }
+
+        return null;
     }
+
 }

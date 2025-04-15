@@ -34,7 +34,7 @@ public class StreamRunner {
                 "-s",
                 "-N",
                 "http://localhost:8080/api/discord/guilds/" + stream.getGuildId() +
-                        "/channels/" + stream.getChannelId() + "/messages/" + stream.getType()
+                        "/channels/" + stream.getChannelId() + "/messages"
         };
 
         while (true) {

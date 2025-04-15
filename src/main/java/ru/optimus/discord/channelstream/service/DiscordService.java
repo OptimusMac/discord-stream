@@ -4,26 +4,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import ru.optimus.discord.channelstream.api.factory.FactoryLoaderModules;
 import ru.optimus.discord.channelstream.config.DiscordConfig;
-import ru.optimus.discord.channelstream.modules.CityProcess;
-import ru.optimus.discord.channelstream.utils.NumberExtractor;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.List;
 import java.util.Map;
-import java.util.Random;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Service
 @Slf4j
@@ -33,17 +25,17 @@ public class DiscordService {
     private final WebClient discordWebClient;
     private final MessageService messageService;
     private final DiscordConfig discordConfig;
-    private final CityProcess cityProcess;
+    private final FactoryLoaderModules factoryLoaderModules;
 
     public Flux<Message> getChannelMessages(String guildId, String channelId, int limit) {
         return validateChannelInGuild(guildId, channelId)
                 .thenMany(discordWebClient.get()
-                        .uri("/channels/{channelId}/messages?limit={limit}", channelId,limit)
+                        .uri("/channels/{channelId}/messages?limit={limit}", channelId, limit)
                         .retrieve()
                         .bodyToFlux(Message.class));
     }
 
-    public Flux<Message> streamChannelMessages(String guildId, String channelId, String type) {
+    public Flux<Message> streamChannelMessages(String guildId, String channelId) {
         return Flux.interval(Duration.ofSeconds(1))
                 .flatMap(tick -> getChannelMessages(guildId, channelId, 1))
                 .filter(message -> !messageService.exists(message))
@@ -51,7 +43,7 @@ public class DiscordService {
                 .filter(this::declineForMe)
                 .doOnEach(message -> {
                     if (message.hasValue()) {
-                        checkAndReply(message.get(), channelId, type).subscribe();
+                        checkAndReply(message.get()).subscribe();
                     }
                 })
                 .distinct(Message::getId)
@@ -64,7 +56,7 @@ public class DiscordService {
 
     public boolean declineForMe(Message message) {
 
-        if(message.author == null)
+        if (message.author == null)
             return false;
 
         return discordConfig.isReplyForMe() || !message.author.username.equals(discordConfig.getUsername());
@@ -84,63 +76,14 @@ public class DiscordService {
                 });
     }
 
-    private final Random random = new Random();
+    private Mono<Void> checkAndReply(Message message) {
+        return Mono.fromCallable(() -> {
+            factoryLoaderModules.applyFirst(message, messageService::save);
+            return null;
+        });
 
-    private Mono<Void> checkAndReply(Message message, String channelId, String type) {
-        String text = message.content;
-
-        String extract = NumberExtractor.extractSingleNumber(text);
-        if (extract != null && type.equalsIgnoreCase("NUMERIC")) {
-            String numericText = incrementString(extract);
-            if(numericText == null)
-                return Mono.empty();
-            return sendMessageWithResponse(channelId, numericText)
-                    .doOnSuccess(messageService::saveByDiscordMessageResponse)
-                    .then()
-                    .onErrorResume(e -> {
-                        log.error("Ошибка при отправке числового ответа: {}", e.getMessage());
-                        return Mono.empty();
-                    });
-        }
-
-        if (!text.isEmpty() && type.equalsIgnoreCase("WORD")) {
-
-            if(!isLastCharCyrillicOrLatin(text))
-                return Mono.empty();
-
-            char lastChar = text.charAt(text.length() - 1);
-            return cityProcess.searchCities(lastChar)
-                    .flatMap(cities -> {
-                        if (!cities.isEmpty()) {
-                            String randomCity = cities.get(random.nextInt(cities.size()));
-                            return sendMessageWithResponse(channelId, randomCity)
-                                    .doOnSuccess(messageService::saveByDiscordMessageResponse)
-                                    .then();
-                        }
-                        return Mono.empty();
-                    })
-                    .onErrorResume(e -> {
-                        log.error("Ошибка при обработке городов: {}", e.getMessage());
-                        return Mono.empty();
-                    });
-        }
-
-        return Mono.empty();
     }
 
-
-
-    public boolean isLastCharCyrillicOrLatin(String text) {
-        if (text == null || text.isEmpty()) {
-            return false;
-        }
-
-        char lastChar = text.charAt(text.length() - 1);
-        Character.UnicodeBlock block = Character.UnicodeBlock.of(lastChar);
-
-        return block == Character.UnicodeBlock.CYRILLIC
-                || block == Character.UnicodeBlock.BASIC_LATIN && Character.isLetter(lastChar);
-    }
 
     public boolean expiredTimestamp(String timestamp) {
         try {
@@ -167,21 +110,6 @@ public class DiscordService {
                 .doOnError(e -> System.err.println("Ошибка отправки: " + e.getMessage()));
     }
 
-    public String incrementString(String text) {
-        try {
-
-
-            String normalized = text.trim().replace(",", ".");
-            BigDecimal number = new BigDecimal(normalized);
-            BigDecimal incremented = number.add(BigDecimal.ONE);
-            if (number.scale() <= 0) {
-                return incremented.setScale(0, RoundingMode.UNNECESSARY).toString();
-            }
-            return incremented.toString();
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
 
     @Data
     public static class Message {
