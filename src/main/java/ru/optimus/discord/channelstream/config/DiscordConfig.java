@@ -28,7 +28,6 @@ public class DiscordConfig {
 
 
 
-
     @Bean
     public WebClient discordWebClient() {
         return WebClient.builder()

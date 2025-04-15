@@ -1,6 +1,7 @@
 package ru.optimus.discord.channelstream.service;
 
 import jakarta.annotation.PostConstruct;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -11,7 +12,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
 @Service
-@RequiredArgsConstructor
+@AllArgsConstructor
 @Slf4j
 public class StreamRunner {
     private final DiscordStreamConfig config;
@@ -33,7 +34,7 @@ public class StreamRunner {
                 "-s",
                 "-N",
                 "http://localhost:8080/api/discord/guilds/" + stream.getGuildId() +
-                        "/channels/" + stream.getChannelId() + "/messages"
+                        "/channels/" + stream.getChannelId() + "/messages/" + stream.getType()
         };
 
         while (true) {
