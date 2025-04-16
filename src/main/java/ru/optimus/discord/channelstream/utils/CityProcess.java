@@ -1,105 +1,94 @@
 package ru.optimus.discord.channelstream.utils;
 
 import lombok.extern.slf4j.Slf4j;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.Random;
 
 @Component
 @Slf4j
 public class CityProcess {
-    protected final String BASE_URL = "https://htmlweb.ru/geo/city/";
-    private final WebClient webClient;
 
-    public CityProcess() {
-        this.webClient = WebClient.builder()
-                .baseUrl(BASE_URL)
-                .filter(logRequest())
-                .filter(logResponse())
-                .build();
-        log.debug("Initialized CityProcess with base URL: {}", BASE_URL);
+    private static final Random random = new Random();
+    private static final String[] prevWords = new String['Я' - 'А' + 1];
+    private static String[][] citiesByFirstLetter = {
+            /* А */ {"Абакан", "Азов", "Александров", "Альметьевск", "Анапа", "Архангельск", "Астрахань", "Армавир", "Артём", "Ачинск"},
+            /* Б */ {"Балаково", "Балашиха", "Барнаул", "Батайск", "Белгород", "Бердск", "Бийск", "Благовещенск", "Братск", "Брянск"},
+            /* В */ {"Видное", "Владивосток", "Владикавказ", "Владимир", "Волгоград", "Волгодонск", "Волжский", "Вологда", "Воркута", "Воронеж"},
+            /* Г */ {"Гатчина", "Геленджик", "Глазов", "Горно-Алтайск", "Грозный", "Губкинский", "Гусь-Хрустальный"},
+            /* Д */ {"Дербент", "Дзержинск", "Димитровград", "Дмитров", "Долгопрудный", "Домодедово", "Донецк", "Дубна"},
+            /* Е */ {"Евпатория", "Егорьевск", "Ейск", "Екатеринбург", "Елабуга", "Елец", "Ессентуки"},
+            /* Ж */ {"Железногорск", "Жигулёвск", "Жуковский"},
+            /* З */ {"Заречный", "Зеленогорск", "Зеленодольск", "Златоуст"},
+            /* И */ {"Иваново", "Ивантеевка", "Ижевск", "Иркутск", "Искитим", "Ишим", "Ишимбай"},
+            /* Й */ {"Йошкар-Ола"},
+            /* К */ {"Казань", "Калининград", "Калуга", "Каменск-Уральский", "Камышин", "Канск", "Кемерово", "Керчь", "Киров", "Кисловодск", "Ковров", "Коломна", "Комсомольск-на-Амуре", "Копейск", "Королёв", "Кострома", "Красногорск", "Краснодар", "Красноярск", "Курган", "Курск", "Кызыл"},
+            /* Л */ {"Лениногорск", "Ленинск-Кузнецкий", "Липецк", "Лобня", "Люберцы"},
+            /* М */ {"Магадан", "Магнитогорск", "Майкоп", "Махачкала", "Миасс", "Москва", "Мурманск", "Муром", "Мытищи"},
+            /* Н */ {"Набережные Челны", "Назарово", "Назрань", "Нальчик", "Наро-Фоминск", "Нефтекамск", "Нефтеюганск", "Нижневартовск", "Нижнекамск", "Нижний Новгород", "Новокузнецк", "Новороссийск", "Новосибирск", "Ногинск", "Норильск", "Ноябрьск"},
+            /* О */ {"Обнинск", "Одинцово", "Октябрьский", "Омск", "Орёл", "Оренбург", "Орехово-Зуево", "Орск"},
+            /* П */ {"Павлово", "Павловский Посад", "Пенза", "Пермь", "Петрозаводск", "Петропавловск-Камчатский", "Подольск", "Прокопьевск", "Псков", "Пушкино", "Пятигорск"},
+            /* Р */ {"Раменское", "Ревда", "Реутов", "Ржев", "Рославль", "Россошь", "Ростов-на-Дону", "Рубцовск", "Рыбинск", "Рязань"},
+            /* С */ {"Салават", "Салехард", "Самара", "Санкт-Петербург", "Саранск", "Сарапул", "Саратов", "Северодвинск", "Северск", "Сергиев Посад", "Серов", "Серпухов", "Симферополь", "Смоленск", "Соликамск", "Сочи", "Ставрополь", "Старый Оскол", "Стерлитамак", "Ступино", "Сургут", "Сызрань", "Сыктывкар"},
+            /* Т */ {"Тамбов", "Тверь", "Тимашёвск", "Тихвин", "Тихорецк", "Тобольск", "Тольятти", "Томск", "Троицк", "Туапсе", "Тула", "Тюмень"},
+            /* У */ {"Улан-Удэ", "Ульяновск", "Уссурийск", "Уфа", "Ухта"},
+            /* Ф */ {"Феодосия", "Фрязино"},
+            /* Х */ {"Хабаровск", "Ханты-Мансийск", "Химки", "Холмск", "Чебоксары", "Челябинск", "Череповец", "Черкесск", "Черногорск", "Чехов", "Чита", "Чусовой"},
+            /* Ц */ {"Цивильск"},
+            /* Ч */ {"Чебоксары", "Челябинск", "Череповец", "Черкесск", "Черногорск", "Чехов", "Чита", "Чусовой"},
+            /* Ш */ {"Шадринск", "Шали", "Шахты", "Шуя"},
+            /* Щ */ {"Щёлково", "Щёкино", "Щербинка"},
+            /* Э */ {"Электросталь", "Элиста", "Энгельс"},
+            /* Ю */ {"Южно-Сахалинск", "Юрга"},
+            /* Я */ {"Якутск", "Ялта", "Ярославль"}
+    };
+
+
+    public synchronized static String findWord(char c) {
+        if (c < 'А' || c > 'Я') {
+
+            return null;
+        }
+
+
+
+        int index = c - 'А';
+
+        if (citiesByFirstLetter == null || index >= citiesByFirstLetter.length
+                || citiesByFirstLetter[index] == null
+                || citiesByFirstLetter[index].length == 0) {
+            return null;
+        }
+        String[] cities = citiesByFirstLetter[index];
+        String selectedCity;
+        int attempts = 0;
+        final int maxAttempts = 5;
+
+        do {
+            selectedCity = cities[random.nextInt(cities.length)];
+            attempts++;
+        } while (attempts < maxAttempts && selectedCity.equals(prevWords[index]));
+
+        if (selectedCity.equals(prevWords[index])) {
+            selectedCity = findWord(c);
+        }
+
+        prevWords[index] = selectedCity;
+        return selectedCity;
     }
 
-    public Mono<List<String>> searchCities(char letter) {
-        char upperLetter = Character.toUpperCase(letter);
-        log.debug("Starting city search for letter: {}", upperLetter);
 
-        return webClient.get()
-                .uri("/{letter}", upperLetter)
-                .exchangeToMono(response -> {
-                    log.debug("Received response status: {}", response.statusCode());
-                    if (!response.statusCode().is2xxSuccessful()) {
-                        log.warn("Non-successful response: {}", response.statusCode());
-                        return response.createException()
-                                .flatMap(Mono::error);
-                    }
-                    return response.bodyToMono(String.class)
-                            .doOnNext(body -> log.trace("Raw HTML response: {}", body));
-                })
-                .flatMap(this::parseCitiesFromHtml)
-                .doOnNext(cities -> log.debug("Found {} cities for letter {}", cities.size(), upperLetter))
-                .doOnError(e -> log.error("Error searching cities for letter " + upperLetter, e))
-                .onErrorResume(e -> {
-                    log.warn("Returning empty list due to error", e);
-                    return Mono.just(Collections.emptyList());
-                });
-    }
+    public static boolean validateCity(String city){
 
-    private Mono<List<String>> parseCitiesFromHtml(String html) {
-        return Mono.fromCallable(() -> {
-                    log.trace("Starting HTML parsing");
-                    long startTime = System.currentTimeMillis();
-
-                    try {
-                        Document doc = Jsoup.parse(html);
-                        Elements cityElements = doc.select("#hypercontext > ul > li:nth-child(2) > a.big");
-                        log.debug("Found {} city elements in HTML", cityElements.size());
-
-                        List<String> cities = new ArrayList<>();
-                        for (Element element : cityElements) {
-                            String city = element.text();
-                            log.trace("Found city: {}", city);
-                            cities.add(city);
-                        }
-
-                        long duration = System.currentTimeMillis() - startTime;
-                        log.debug("HTML parsing completed in {} ms. Found {} cities", duration, cities.size());
-                        return cities;
-                    } catch (Exception e) {
-                        log.error("HTML parsing failed", e);
-                        throw e;
-                    }
-                })
-                .subscribeOn(Schedulers.boundedElastic()); // Выносим парсинг из event-loop
-    }
-
-    // Логирование запросов
-    private ExchangeFilterFunction logRequest() {
-        return ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
-            log.debug("Request: {} {}", clientRequest.method(), clientRequest.url());
-            clientRequest.headers().forEach((name, values) ->
-                    values.forEach(value -> log.trace("Request header: {}={}", name, value)));
-            return Mono.just(clientRequest);
-        });
-    }
-
-    // Логирование ответов
-    private ExchangeFilterFunction logResponse() {
-        return ExchangeFilterFunction.ofResponseProcessor(clientResponse -> {
-            log.debug("Response status: {}", clientResponse.statusCode());
-            clientResponse.headers().asHttpHeaders().forEach((name, values) ->
-                    values.forEach(value -> log.trace("Response header: {}={}", name, value)));
-            return Mono.just(clientResponse);
-        });
+        for (int i = 0; i < citiesByFirstLetter.length; i++) {
+            String[] wordsArray = citiesByFirstLetter[i];
+            for (int i1 = 0; i1 < wordsArray.length; i1++) {
+                String word = wordsArray[i1];
+                if(word.equalsIgnoreCase(city)){
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

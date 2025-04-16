@@ -11,22 +11,26 @@ import ru.optimus.discord.channelstream.service.DiscordService;
 import ru.optimus.discord.channelstream.service.MessageService;
 import ru.optimus.discord.channelstream.utils.CityProcess;
 
+import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @ModuleDiscord
 @Slf4j
-@OnlyChannel(channelId = "1361039180142084226")
+@OnlyChannel(channelId = "1361659509218476225")
 public class CityModule extends ModulesStreamAPI {
 
     private final MessageService messageService;
-    private final CityProcess cityProcess;
-    private final Random random = new Random();
 
     public CityModule(WebClient discordWebClient, MessageService messageService) {
         super(discordWebClient);
         this.messageService = messageService;
-        this.cityProcess = new CityProcess();
+    }
+
+
+
+    private char findChar(String message, int index){
+        return Character.toUpperCase(message.charAt(index));
     }
 
 
@@ -36,29 +40,39 @@ public class CityModule extends ModulesStreamAPI {
 
             String text = message.getContent();
 
-            char lastChar = text.charAt(text.length() - 1);
+            int backStep = 1;
+
+            char lastChar = findChar(text, text.length() - backStep);
+
+            int retry = 5;
+
+            while((lastChar == 'Ь' || lastChar == 'Ъ') && retry > 0){
+                lastChar = findChar(text, text.length() - ++backStep);
+                --retry;
+            }
+            if(retry == 0)
+                return false;
 
             if (!isLastCharCyrillicOrLatin(text))
                 return false;
 
             AtomicBoolean atomicBoolean = new AtomicBoolean(false);
 
-            cityProcess.searchCities(lastChar)
-                    .flatMap(cities -> {
-                        if (!cities.isEmpty()) {
-                            String randomCity = cities.get(random.nextInt(cities.size()));
-                            return sendMessage(randomCity, message.getChannel_id())
-                                    .doOnSuccess(discordMessageResponse -> {
-                                        atomicBoolean.set(true);
-                                        messageService.saveByDiscordMessageResponse(discordMessageResponse);
-                                    })
-                                    .then();
-                        }
-                        return Mono.empty();
-                    })
-                    .onErrorResume(e -> {
-                        log.error("Ошибка при обработке городов: {}", e.getMessage());
-                        return Mono.empty();
+            String word = CityProcess.findWord(lastChar);
+
+            if(word == null) {
+                return false;
+            }
+
+            if(!CityProcess.validateCity(message.getContent())){
+
+                return false;
+            }
+
+            sendMessage(word, message.getChannel_id())
+                    .doOnSuccess(discordMessageResponse -> {
+                        atomicBoolean.set(true);
+                        messageService.saveByDiscordMessageResponse(discordMessageResponse);
                     }).subscribe();
 
             return atomicBoolean.get();
