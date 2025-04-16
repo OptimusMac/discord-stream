@@ -120,16 +120,13 @@ public class DiscordService {
         private Author author;
         private String timestamp;
 
-        // геттеры и сеттеры
     }
 
-    // DTO для информации о канале
     @Data
     public static class ChannelInfo {
         private String id;
         private String guild_id;
 
-        // геттеры и сеттеры
     }
 
     @Data
@@ -137,7 +134,6 @@ public class DiscordService {
         private String id;
         private String username;
 
-        // геттеры и сеттеры
     }
 
     @Data
