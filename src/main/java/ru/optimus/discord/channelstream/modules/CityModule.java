@@ -9,13 +9,14 @@ import ru.optimus.discord.channelstream.api.anno.OnlyChannel;
 import ru.optimus.discord.channelstream.api.func.MessageFunction;
 import ru.optimus.discord.channelstream.service.DiscordService;
 import ru.optimus.discord.channelstream.service.MessageService;
+import ru.optimus.discord.channelstream.utils.CityProcess;
 
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @ModuleDiscord
 @Slf4j
-@OnlyChannel(channelId = "1361842943542951996")
+@OnlyChannel(channelId = "1361039180142084226")
 public class CityModule extends ModulesStreamAPI {
 
     private final MessageService messageService;

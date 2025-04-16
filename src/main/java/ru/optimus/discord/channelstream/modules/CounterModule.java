@@ -8,6 +8,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import ru.optimus.discord.channelstream.api.ModulesStreamAPI;
 import ru.optimus.discord.channelstream.api.anno.ModuleDiscord;
+import ru.optimus.discord.channelstream.api.anno.OnlyChannel;
 import ru.optimus.discord.channelstream.api.func.MessageFunction;
 import ru.optimus.discord.channelstream.service.DiscordService;
 import ru.optimus.discord.channelstream.service.MessageService;
@@ -17,6 +18,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 @ModuleDiscord
+@OnlyChannel(channelId = "1361038778436681782")
 public class CounterModule extends ModulesStreamAPI {
 
     private final MessageService messageService;
