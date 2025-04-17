@@ -11,13 +11,11 @@ import ru.optimus.discord.channelstream.service.DiscordService;
 import ru.optimus.discord.channelstream.service.MessageService;
 import ru.optimus.discord.channelstream.utils.CityProcess;
 
-import java.util.Locale;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @ModuleDiscord
 @Slf4j
-@OnlyChannel(channelId = "1361659509218476225")
+@OnlyChannel(channelId = "1361039180142084226")
 public class CityModule extends ModulesStreamAPI {
 
     private final MessageService messageService;
@@ -28,8 +26,7 @@ public class CityModule extends ModulesStreamAPI {
     }
 
 
-
-    private char findChar(String message, int index){
+    private char findChar(String message, int index) {
         return Character.toUpperCase(message.charAt(index));
     }
 
@@ -46,34 +43,33 @@ public class CityModule extends ModulesStreamAPI {
 
             int retry = 5;
 
-            while((lastChar == 'Ь' || lastChar == 'Ъ') && retry > 0){
+            while ((lastChar == 'Ь' || lastChar == 'Ъ') && retry > 0) {
                 lastChar = findChar(text, text.length() - ++backStep);
                 --retry;
             }
-            if(retry == 0)
-                return false;
+            if (retry == 0) return false;
 
-            if (!isLastCharCyrillicOrLatin(text))
-                return false;
+            if (!isLastCharCyrillicOrLatin(text)) return false;
+
 
             AtomicBoolean atomicBoolean = new AtomicBoolean(false);
 
             String word = CityProcess.findWord(lastChar);
 
-            if(word == null) {
-                return false;
-            }
 
-            if(!CityProcess.validateCity(message.getContent())){
-
-                return false;
-            }
-
-            sendMessage(word, message.getChannel_id())
-                    .doOnSuccess(discordMessageResponse -> {
+            Mono.defer(() -> CityProcess.validateCity(message.getContent()).flatMap(cityValid -> {
+                if (!cityValid) {
+                    return Mono.defer(() -> sendMessage("Не знаю такого города(", message.getChannel_id()).doOnSuccess(discordMessageResponse -> {
                         atomicBoolean.set(true);
                         messageService.saveByDiscordMessageResponse(discordMessageResponse);
-                    }).subscribe();
+                    }).thenReturn(false));
+                }
+
+                return sendMessage(word, message.getChannel_id()).doOnSuccess(discordMessageResponse -> {
+                    atomicBoolean.set(true);
+                    messageService.saveByDiscordMessageResponse(discordMessageResponse);
+                }).thenReturn(true);
+            })).subscribe();
 
             return atomicBoolean.get();
         };
@@ -87,7 +83,6 @@ public class CityModule extends ModulesStreamAPI {
         char lastChar = text.charAt(text.length() - 1);
         Character.UnicodeBlock block = Character.UnicodeBlock.of(lastChar);
 
-        return block == Character.UnicodeBlock.CYRILLIC
-                || block == Character.UnicodeBlock.BASIC_LATIN && Character.isLetter(lastChar);
+        return block == Character.UnicodeBlock.CYRILLIC || block == Character.UnicodeBlock.BASIC_LATIN && Character.isLetter(lastChar);
     }
 }

@@ -2,6 +2,8 @@ package ru.optimus.discord.channelstream.utils;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.Random;
 
@@ -51,7 +53,6 @@ public class CityProcess {
         }
 
 
-
         int index = c - 'А';
 
         if (citiesByFirstLetter == null || index >= citiesByFirstLetter.length
@@ -78,17 +79,20 @@ public class CityProcess {
     }
 
 
-    public static boolean validateCity(String city){
-
-        for (int i = 0; i < citiesByFirstLetter.length; i++) {
-            String[] wordsArray = citiesByFirstLetter[i];
-            for (int i1 = 0; i1 < wordsArray.length; i1++) {
-                String word = wordsArray[i1];
-                if(word.equalsIgnoreCase(city)){
-                    return true;
-                }
-            }
+    public static Mono<Boolean> validateCity(String city) {
+        if (city == null || city.isEmpty()) {
+            return Mono.just(false);
         }
-        return false;
+
+        int c = Character.toUpperCase(city.charAt(0));
+        if (c < 'А' || c > 'Я') {
+            return Mono.just(false);
+        }
+
+        int index = c - 'А';
+
+        return Flux.fromArray(citiesByFirstLetter[index])
+                .any(word -> word.equalsIgnoreCase(city))
+                .defaultIfEmpty(false);
     }
 }
