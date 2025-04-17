@@ -15,7 +15,7 @@
 
 ### 1. Создание пользователя
 ```java
-@UserContext(token = "YOUR_BOT_TOKEN")
+@UserContext(token = "USER_AUTHORIZE_TOKEN")
 public class BotUser {
     @Username
     public String username() {
