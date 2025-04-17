@@ -19,7 +19,7 @@
 public class BotUser {
     @Username
     public String username() {
-        return "MyDiscordBot";
+        return "YourUsername";
     }
 }
 ```
