@@ -2,7 +2,6 @@
 
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=spring&logoColor=white)](https://spring.io/)
 [![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://java.com/)
-[![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/)
 
 > **AOP-решение для мониторинга каналов Discord через Spring Framework**
 
@@ -136,7 +135,11 @@ public class ExampleUser { ... }
 @UserContext(token = "токен2") class UserExample2 { ... }
 ```
 
-[![Maven Central](https://img.shields.io/maven-central/v/ru.optimus.discord.channelstream/discord-channel-stream?color=blue)](https://maven.pkg.github.com/OptimusMac/discord-stream)
+# 🚀 Подключение Discord Channel Stream к вашему проекту
+
+## 📌 Простое подключение через Maven
+
+Скопируйте этот блок в ваш `pom.xml`:
 
 ```xml
 <dependency>
