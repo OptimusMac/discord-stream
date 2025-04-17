@@ -24,6 +24,8 @@ public class BotUser {
     }
 }
 ```
+
+
 ## ⚠️ Важное ограничение
 **Класс пользователя должен быть в единственном экземпляре** во всем приложении.
 
@@ -132,4 +134,14 @@ public class ExampleUser { ... }
 - Неправильно (вызовет исключение):
 @UserContext(token = "токен1") class UserExample1 { ... }
 @UserContext(token = "токен2") class UserExample2 { ... }
+```
+
+[![Maven Central](https://img.shields.io/maven-central/v/ru.optimus.discord.channelstream/discord-channel-stream?color=blue)](https://maven.pkg.github.com/OptimusMac/discord-stream)
+
+```xml
+<dependency>
+    <groupId>ru.optimus.discord.channelstream</groupId>
+    <artifactId>discord-channel-stream</artifactId>
+    <version>0.0.8</version>
+</dependency>
 ```
