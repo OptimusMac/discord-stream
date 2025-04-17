@@ -18,14 +18,5 @@ spring:
     keyspace-name: discord
     schema-action: CREATE_IF_NOT_EXISTS
 
-discord:
-  token: "Your-token"
-  reply-for-me: false
-  token-username: optimusmac_
-  auto-runner: true
-  streams:
-    - guildId: "1361659509218476222"
-      channelId: "1361659509218476225"
-    - guildId: "1361659509218476222"
-      channelId: "1361842943542951996"
+
 

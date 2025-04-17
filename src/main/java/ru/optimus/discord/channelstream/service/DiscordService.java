@@ -1,21 +1,21 @@
 package ru.optimus.discord.channelstream.service;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import ru.optimus.discord.channelstream.api.factory.FactoryLoaderModules;
-import ru.optimus.discord.channelstream.config.DiscordConfig;
+import ru.optimus.discord.channelstream.context.FactoryListenerMessageContext;
+import ru.optimus.discord.channelstream.context.proxy.ChannelProxy;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.Map;
+import java.util.Objects;
 
 @Service
 @Slf4j
@@ -24,8 +24,7 @@ public class DiscordService {
 
     private final WebClient discordWebClient;
     private final MessageService messageService;
-    private final DiscordConfig discordConfig;
-    private final FactoryLoaderModules factoryLoaderModules;
+    private FactoryListenerMessageContext listenerMessageContext;
 
     public Flux<Message> getChannelMessages(String guildId, String channelId, int limit) {
         return validateChannelInGuild(guildId, channelId)
@@ -35,12 +34,20 @@ public class DiscordService {
                         .bodyToFlux(Message.class));
     }
 
-    public Flux<Message> streamChannelMessages(String guildId, String channelId) {
+
+
+    @PostConstruct
+    public void initRunnable(){
+        for (ChannelProxy channelProxy : listenerMessageContext.registerRunnableListenerContexts()) {
+            this.streamChannelMessages(channelProxy.guildID(), channelProxy.channelId()).subscribe();
+        }
+    }
+
+    private Flux<Message> streamChannelMessages(String guildId, String channelId) {
         return Flux.interval(Duration.ofSeconds(1))
                 .flatMap(tick -> getChannelMessages(guildId, channelId, 1))
                 .filter(message -> !messageService.exists(message))
                 .filter(message -> !expiredTimestamp(message.timestamp))
-                .filter(this::declineForMe)
                 .doOnEach(message -> {
                     if (message.hasValue()) {
                         checkAndReply(message.get()).subscribe();
@@ -49,18 +56,12 @@ public class DiscordService {
                 .distinct(Message::getId)
                 .doOnEach(messageSignal -> {
                     if (messageSignal.hasValue()) {
-                        messageService.save(messageSignal.get());
+
+                        messageService.save(Objects.requireNonNull(messageSignal.get()));
                     }
                 });
     }
 
-    public boolean declineForMe(Message message) {
-
-        if (message.author == null)
-            return false;
-
-        return discordConfig.isReplyForMe() || !message.author.username.equals(discordConfig.getUsername());
-    }
 
     private Mono<Void> validateChannelInGuild(String guildId, String channelId) {
         return discordWebClient.get()
@@ -78,7 +79,7 @@ public class DiscordService {
 
     private Mono<Void> checkAndReply(Message message) {
         return Mono.fromCallable(() -> {
-            factoryLoaderModules.applyFirst(message, messageService::save);
+            listenerMessageContext.tryListen(message);
             return null;
         });
 
@@ -99,16 +100,6 @@ public class DiscordService {
         }
     }
 
-    public Mono<DiscordMessageResponse> sendMessageWithResponse(String channelId, String message) {
-        return discordWebClient.post()
-                .uri("/channels/{channelId}/messages", channelId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(Map.of("content", message))
-                .retrieve()
-                .bodyToMono(DiscordMessageResponse.class)
-                .doOnNext(response -> System.out.println("Сообщение отправлено: " + response))
-                .doOnError(e -> System.err.println("Ошибка отправки: " + e.getMessage()));
-    }
 
 
     @Data

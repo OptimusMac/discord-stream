@@ -1,13 +1,18 @@
-package ru.optimus.discord.channelstream.api.anno;
+package ru.optimus.discord.channelstream.anno;
+
+import lombok.AllArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+@Component
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface Priority {
+public @interface ListenerChannel {
 
-    int index() default 0;
+    String guildId();
+    String channelId();
 }

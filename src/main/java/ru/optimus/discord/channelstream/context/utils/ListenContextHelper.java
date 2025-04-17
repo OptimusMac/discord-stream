@@ -1,23 +1,24 @@
-package ru.optimus.discord.channelstream.api;
+package ru.optimus.discord.channelstream.context.utils;
 
 import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-import ru.optimus.discord.channelstream.api.func.MessageFunction;
 import ru.optimus.discord.channelstream.service.DiscordService;
+import ru.optimus.discord.channelstream.service.MessageService;
 
 import java.util.Map;
 
 @AllArgsConstructor
-public abstract class ModulesStreamAPI implements DiscordStreamAPI {
-
+@Component
+public class ListenContextHelper {
 
     private final WebClient discordWebClient;
+    private final MessageService messageService;
 
 
-    public Mono<DiscordService.DiscordMessageResponse> sendMessage(String message, String channelId) {
+    public Mono<DiscordService.DiscordMessageResponse> sendMessageWithResponse(String channelId, String message) {
         return discordWebClient.post()
                 .uri("/channels/{channelId}/messages", channelId)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -25,16 +26,11 @@ public abstract class ModulesStreamAPI implements DiscordStreamAPI {
                 .retrieve()
                 .bodyToMono(DiscordService.DiscordMessageResponse.class)
                 .doOnNext(response -> System.out.println("Сообщение отправлено: " + response))
+                .doOnSuccess(messageService::saveByDiscordMessageResponse)
                 .doOnError(e -> System.err.println("Ошибка отправки: " + e.getMessage()));
     }
 
-    @Override
-    public boolean apply(DiscordService.Message message, String channelId, String guildId){
-        return function().apply(message, channelId, guildId);
-    }
-
-
-    public MessageFunction<DiscordService.Message, String, String> function() {
-        throw new UnsupportedOperationException();
+    public void defaultMessageSender(String channelId, String message) {
+        this.sendMessageWithResponse(channelId, message).subscribe();
     }
 }

@@ -1,7 +1,4 @@
-package ru.optimus.discord.channelstream.api.anno;
-
-
-import org.springframework.stereotype.Component;
+package ru.optimus.discord.channelstream.anno;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -9,8 +6,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-@Component
-public @interface ModuleDiscord {
-
+@Target(ElementType.METHOD)
+public @interface MessageHook {
 }
